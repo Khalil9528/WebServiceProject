@@ -7,9 +7,9 @@ namespace WebServiceProject.Repository
     public class MovieRepository : IMovieRepository
     {
         private readonly DataContext _context;
-        public MovieRepository(DataContext context) 
+        public MovieRepository(DataContext context)
         {
-            _context = context; 
+            _context = context;
         }
 
         public ICollection<Movie> GetMovies()
@@ -17,5 +17,16 @@ namespace WebServiceProject.Repository
             return _context.Movies.OrderBy(m => m.Id).ToList();
         }
 
+        public Movie GetMovieById(int id)
+        {
+            return _context.Movies.Where(m => m.Id == id).FirstOrDefault();
+        }
+        public Movie GetMovieByTitle(string title)
+        {
+            {
+                return _context.Movies.Where(m => m.Title == title).FirstOrDefault();
+
+            }
+        }
     }
 }

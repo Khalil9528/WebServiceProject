@@ -8,7 +8,7 @@ namespace WebServiceProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class MovieController : Controller 
+    public class MovieController : Controller
     {
         private readonly IMovieRepository _movieRepository;
         private readonly DataContext _context;
@@ -32,6 +32,36 @@ namespace WebServiceProject.Controllers
 
             return Ok(movies);
         }
+        /*
+        [HttpGet("{movieId}")]
+        [ProducesResponseType(200, Type = typeof(Movie))]
+        [ProducesResponseType(400)]
+
+        public IActionResult GetMovie(int id)
+        {
+            var movie = _movieRepository.GetMovieById(id);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            return Ok(movie);
+        }
+        */
+        [HttpGet("{movieTitle}")]
+        [ProducesResponseType(200, Type = typeof(string))]
+        [ProducesResponseType(400)]
+
+        public IActionResult GetMoGetMovieByTitle(string movieTitle)
+        {
+            var Titre = _movieRepository.GetMovieByTitle(movieTitle);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            return Ok(Titre);
+
+        }
+
 
     }
 }

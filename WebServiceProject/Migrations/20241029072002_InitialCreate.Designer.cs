@@ -12,7 +12,7 @@ using WebServiceProject.Data;
 namespace WebServiceProject.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20241028122520_InitialCreate")]
+    [Migration("20241029072002_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

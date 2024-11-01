@@ -1,55 +1,146 @@
 using Microsoft.EntityFrameworkCore;
 using WebServiceProject;
 using WebServiceProject.Data;
-using WebServiceProject.Intefraces;
+using WebServiceProject.Interfaces;
 using WebServiceProject.Models;
 using WebServiceProject.Repository;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
+using WebServiceProject.Services;
+using WebServiceProject.Intefraces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1. Ajouter les services de contrôleurs
 builder.Services.AddControllers();
+
+// 2. Ajout du service pour le seeding des données (données de test)
 builder.Services.AddTransient<Seed>();
+
+// 3. Ajout des repositories pour l'injection de dépendances
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// 4. Ajouter TokenService pour l'authentification JWT
+builder.Services.AddSingleton<TokenService>();
+
+// 5. Configurer CORS pour autoriser les requêtes depuis des applications externes (comme React en local)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy => policy.WithOrigins("http://localhost:5173")
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        policy => policy.WithOrigins("http://localhost:5175/")
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
+// 6. Configurer l'authentification JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+
+// 7. Ajouter une autorisation générale
+builder.Services.AddAuthorization();
+
+// 8. Configuration de Swagger pour la documentation de l'API et l'authentification JWT
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "WebServiceProject API", Version = "v1" });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Entrez 'Bearer' suivi d'un espace et du token JWT."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "bearer",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+
+    // Forcer Swagger à utiliser HTTP
+    options.AddServer(new OpenApiServer { Url = "http://localhost:5175" });
+});
+
+// 9. Configuration de la base de données avec Entity Framework Core
 builder.Services.AddDbContext<DataContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
 var app = builder.Build();
 
+// 10. Activer CORS pour autoriser les requêtes de l'application React
+app.UseCors("AllowReactApp");
 
+// 11. Activer l'authentification et l'autorisation dans le pipeline
+app.UseAuthentication();
+app.UseAuthorization();
 
+// 12. Activer le seeding de la base de données si le paramètre "seeddata" est passé en ligne de commande
 if (args.Length == 1 && args[0].ToLower() == "seeddata")
-SeedData(app);
+    SeedData(app);
 
 void SeedData(IHost app)
 {
     var scopedFactory = app.Services.GetService<IServiceScopeFactory>();
-
     using (var scope = scopedFactory.CreateScope())
     {
         var service = scope.ServiceProvider.GetService<Seed>();
         service.SeedDataContext();
     }
-
-
 }
-    // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
+
+// 13. Configurer Swagger dans l'environnement de développement uniquement
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// 14. Rediriger les requêtes HTTP vers HTTPS si nécessaire (commenté ici pour rester en HTTP uniquement)
+// app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
+// 15. Ajouter les contrôleurs au pipeline pour gérer les requêtes HTTP vers les routes API
 app.MapControllers();
 
+// 16. Lancer l'application
 app.Run();

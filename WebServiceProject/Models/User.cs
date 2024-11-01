@@ -20,7 +20,7 @@ namespace WebServiceProject.Models
         {
             Pseudo = string.Empty;
             Password = string.Empty;
-            Reviews = new List<Review>(); // Initialisation pour éviter les références nulles
+            Reviews = new List<Review>(); 
         }
     }
 

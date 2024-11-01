@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebServiceProject.Data;
 using WebServiceProject.Intefraces;
 using WebServiceProject.Models;
@@ -7,6 +8,7 @@ using WebServiceProject.Repository;
 namespace WebServiceProject.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class MovieController : Controller
     {
@@ -48,20 +50,20 @@ namespace WebServiceProject.Controllers
         }
         */
         [HttpGet("{movieTitle}")]
-        [ProducesResponseType(200, Type = typeof(string))]
+        [ProducesResponseType(200, Type = typeof(Movie))]
         [ProducesResponseType(400)]
 
         public IActionResult GetMoGetMovieByTitle(string movieTitle)
         {
-            var Titre = _movieRepository.GetMovieByTitle(movieTitle);
+            var movie = _movieRepository.GetMovieByTitle(movieTitle);
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            return Ok(Titre);
+            return Ok(movie);
 
         }
 
-
+     
     }
 }

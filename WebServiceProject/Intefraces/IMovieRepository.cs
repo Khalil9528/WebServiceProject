@@ -7,6 +7,6 @@ namespace WebServiceProject.Intefraces
         ICollection<Movie> GetMovies();
         Movie GetMovieById(int id);
         Movie GetMovieByTitle(string title);
-
+       
     }
 }

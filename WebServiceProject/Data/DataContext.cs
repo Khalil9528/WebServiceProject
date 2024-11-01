@@ -15,24 +15,31 @@ namespace WebServiceProject.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Movie - Review (One-to-Many)
             modelBuilder.Entity<Movie>()
                 .HasMany(m => m.Reviews)
                 .WithOne(r => r.Movie)
-                .HasForeignKey(r => r.MovieId);
+                .HasForeignKey(r => r.MovieId)
+                .OnDelete(DeleteBehavior.Cascade);  // Cascade delete for reviews when a movie is deleted
 
+            // User - Review (One-to-Many)
             modelBuilder.Entity<User>()
                 .HasMany(u => u.Reviews)
                 .WithOne(r => r.Reviewer)
                 .HasForeignKey(r => r.ReviewerId);
 
-            modelBuilder.Entity<Genre>()
-                .HasMany(g => g.Movies)
-                .WithMany(m => m.Genres);
+            // Movie - Genre (Many-to-Many)
+            modelBuilder.Entity<Movie>()
+                .HasMany(m => m.Genres)
+                .WithMany(g => g.Movies)
+                .UsingEntity(j => j.ToTable("MovieGenres"));  // Customize the join table name
+
+            // Index on Movie title
+            modelBuilder.Entity<Movie>()
+                .HasIndex(m => m.Title)
+                .IsUnique();  // Enforce unique titles for movies
 
             base.OnModelCreating(modelBuilder);
         }
-
-
-
     }
 }
